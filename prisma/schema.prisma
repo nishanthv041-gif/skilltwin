@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  name             String
+  email            String            @unique
+  createdAt        DateTime          @default(now())
+  studentProfiles  StudentProfile[]
+}
+
+model StudentProfile {
+  id               String            @id @default(cuid())
+  userId           String
+  githubUsername   String
+  resumeText       String?
+  createdAt        DateTime          @default(now())
+  user             User              @relation(fields: [userId], references: [id])
+  skillEvidence    SkillEvidence[]
+  roadmaps         Roadmap[]
+  readinessResults ReadinessResult[]
+}
+
+model Skill {
+  id               String            @id @default(cuid())
+  skillName        String
+  category         String
+  prerequisites    String? // Comma-separated list or JSON
+  skillEvidence    SkillEvidence[]
+  skillRequirements SkillRequirement[]
+  challenges       Challenge[]
+  roadmapSteps     RoadmapStep[]
+}
+
+model SkillEvidence {
+  id               String            @id @default(cuid())
+  profileId        String
+  skillId          String
+  level            Int               // 0-4
+  confidence       Float
+  evidence         String?
+  profile          StudentProfile    @relation(fields: [profileId], references: [id])
+  skill            Skill             @relation(fields: [skillId], references: [id])
+}
+
+model TargetProfile {
+  id               String            @id @default(cuid())
+  company          String
+  role             String
+  jobDescription   String
+  sourceCount      Int               @default(1)
+  skillRequirements SkillRequirement[]
+  roadmaps         Roadmap[]
+  readinessResults ReadinessResult[]
+}
+
+model SkillRequirement {
+  id               String            @id @default(cuid())
+  targetId         String
+  skillId          String
+  requiredLevel    Int
+  weight           Float             @default(1.0)
+  target           TargetProfile     @relation(fields: [targetId], references: [id])
+  skill            Skill             @relation(fields: [skillId], references: [id])
+}
+
+model Challenge {
+  id               String            @id @default(cuid())
+  skillId          String
+  questions        String            // JSON string containing questions
+  result           String?
+  skill            Skill             @relation(fields: [skillId], references: [id])
+}
+
+model Roadmap {
+  id               String            @id @default(cuid())
+  profileId        String
+  targetId         String
+  createdAt        DateTime          @default(now())
+  profile          StudentProfile    @relation(fields: [profileId], references: [id])
+  target           TargetProfile     @relation(fields: [targetId], references: [id])
+  roadmapSteps     RoadmapStep[]
+}
+
+model RoadmapStep {
+  id               String            @id @default(cuid())
+  roadmapId        String
+  skillId          String
+  week             Int
+  hours            Int
+  miniProject      String?
+  roadmap          Roadmap           @relation(fields: [roadmapId], references: [id])
+  skill            Skill             @relation(fields: [skillId], references: [id])
+}
+
+model ReadinessResult {
+  id               String            @id @default(cuid())
+  profileId        String
+  targetId         String
+  readinessScore   Float
+  blockerSkill     String?
+  calculatedAt     DateTime          @default(now())
+  profile          StudentProfile    @relation(fields: [profileId], references: [id])
+  target           TargetProfile     @relation(fields: [targetId], references: [id])
+}
